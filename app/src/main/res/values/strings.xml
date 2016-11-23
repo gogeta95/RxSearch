@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RxSearch</string>
+    <string name="server_url" translatable="false">https://api.github.com</string>
+    <string name="search">Search</string>
+</resources>
