@@ -1,6 +1,7 @@
 package com.example.saurabh.rxsearch;
 
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -54,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
         }).debounce(MSG_UPDATE_DELAY, TimeUnit.MILLISECONDS)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(Schedulers.io())
+                .doOnNext(new Action1<CharSequence>() {
+                    @Override
+                    public void call(CharSequence charSequence) {
+                        Snackbar.make(recyclerView, "Loading...", Snackbar.LENGTH_INDEFINITE).show();
+                    }
+                })
                 .flatMap(new Func1<CharSequence, Observable<SearchResponse>>() {
                     @Override
                     public Observable<SearchResponse> call(CharSequence charSequence) {
@@ -63,6 +70,12 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(new Action1<SearchResponse>() {
+                    @Override
+                    public void call(SearchResponse response) {
+                        Snackbar.make(recyclerView, "Loaded! ", Snackbar.LENGTH_SHORT).show();
+                    }
+                })
                 .subscribe(new Action1<SearchResponse>() {
                     @Override
                     public void call(SearchResponse searchResponse) {
