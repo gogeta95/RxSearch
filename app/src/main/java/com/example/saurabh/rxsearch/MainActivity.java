@@ -16,9 +16,10 @@ import com.example.saurabh.rxsearch.rest.GitHubClient;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @BindView(R.id.recycler_view)
     RecyclerView recyclerView;
     SearchRecyclerAdapter adapter;
+    Subscription subscription;
     private Handler mHandler;
 
     @Override
@@ -82,19 +84,28 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return true;
     }
 
-    public void processSearchText(String newText) {
-        GitHubClient.getClient(this).getSearchResults(newText).enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    setupRecyclerAdapter(response.body());
-                }
-            }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (subscription != null && !subscription.isUnsubscribed()) {
+            subscription.unsubscribe();
+        }
+    }
 
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                t.printStackTrace();
-            }
-        });
+    public void processSearchText(String newText) {
+        subscription = GitHubClient.getClient(this).getSearchResultsRx(newText)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<SearchResponse>() {
+                    @Override
+                    public void call(SearchResponse searchResponse) {
+                        setupRecyclerAdapter(searchResponse);
+                    }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
     }
 }
